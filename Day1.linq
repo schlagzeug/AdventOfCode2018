@@ -15,8 +15,7 @@ public int Part1(List<string> inputs)
 
 	foreach (var input in inputs)
 	{
-		int x = int.Parse(input);
-		frequency += x;
+		frequency += int.Parse(input);
 	}
 
 	return frequency;
@@ -27,7 +26,7 @@ public int Part2(List<string> inputs)
 	return RunList(inputs, new HashSet<int>(), 0);
 }
 
-private int RunList(List<string> inputs, HashSet<int> frequencies, int frequency)
+public int RunList(List<string> inputs, HashSet<int> frequencies, int frequency)
 {
 	foreach (var input in inputs)
 	{
