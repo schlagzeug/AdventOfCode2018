@@ -2,7 +2,19 @@
 
 void Main()
 {
-	
+	var folder = Path.GetDirectoryName(Util.CurrentQueryPath);
+	var inputs = File.ReadLines(Path.Combine(folder, "Day6_Input.txt")).ToList();
 }
 
-// Define other methods and classes here
+
+class Area
+{
+	int X;
+	int Y;
+
+	Area(int x, int y)
+	{
+		X = x;
+		Y = y;
+	}
+}
