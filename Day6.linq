@@ -4,12 +4,16 @@ void Main()
 {
 	var folder = Path.GetDirectoryName(Util.CurrentQueryPath);
 	var inputs = File.ReadLines(Path.Combine(folder, "Day6_Input.txt")).ToList();
+	
+	// I'll have to come back to this
 }
 
 
 class Map
 {
 	Coordinate upperBound = new Coordinate(-1, -1);
+	List<Area> areas = new List<Area>();
+	
 	Dictionary<Coordinate, string> OwnersByCoordinates
 	{
 		get
@@ -20,12 +24,19 @@ class Map
 				var center = area.center.ToString();
 				foreach (var coordinate in area.coordinatesInArea)
 				{
-					
+					if (dict.ContainsKey(coordinate))
+					{
+						dict[coordinate] = $"{dict[coordinate]}:{center}";
+					}
+					else
+					{
+						dict.Add(coordinate, center);
+					}
 				}
 			}
+			return dict;
 		}
 	}
-	List<Area> areas = new List<Area>();
 	
 	public Map(List<string> rawCoordinates)
 	{
