@@ -4,49 +4,89 @@ void Main()
 {
 	var folder = Path.GetDirectoryName(Util.CurrentQueryPath);
 	var inputs = File.ReadLines(Path.Combine(folder, "Day6_Input.txt")).ToList();
+	var map = new Map(inputs);
 	
-	// I'll have to come back to this
+	Part1(map).Dump("Part 1 Answer");
+	Part2(map).Dump("Part 2 Answer");
 }
 
-
-class Map
+public int Part1(Map map)
 {
-	Coordinate upperBound = new Coordinate(-1, -1);
-	List<Area> areas = new List<Area>();
+	var biggestArea = -1;
+	var countsByIndex = new Dictionary<int, int>();
+	var excluded = new List<int>();
 	
-	Dictionary<Coordinate, string> OwnersByCoordinates
+	foreach (var point in map.MapPoints)
 	{
-		get
+		if (excluded.Contains(point.Owner) || point.OnEdge)
 		{
-			var dict = new Dictionary<Coordinate, string>();
-			foreach (var area in areas)
+			if (!excluded.Contains(point.Owner))
 			{
-				var center = area.center.ToString();
-				foreach (var coordinate in area.coordinatesInArea)
-				{
-					if (dict.ContainsKey(coordinate))
-					{
-						dict[coordinate] = $"{dict[coordinate]}:{center}";
-					}
-					else
-					{
-						dict.Add(coordinate, center);
-					}
-				}
+				excluded.Add(point.Owner);
 			}
-			return dict;
+			continue;
+		}
+		
+		if (countsByIndex.ContainsKey(point.Owner))
+		{
+			countsByIndex[point.Owner]++;
+		}
+		else
+		{
+			countsByIndex.Add(point.Owner, 1);
 		}
 	}
 	
+	foreach (var count in countsByIndex)
+	{
+		if (excluded.Contains(count.Key))
+		{
+			continue;
+		}
+		
+		if (count.Value > biggestArea)
+		{
+			biggestArea = count.Value;
+		}
+	}
+	
+	return biggestArea;
+}
+
+public int Part2(Map map)
+{
+	var safeArea = 0;
+	
+	foreach (var point in map.MapPoints)
+	{
+		int totalDistance = 0;
+		foreach (var input in map.inputs)
+		{
+			totalDistance += map.ManhattanDistance(input, point);
+		}
+		
+		if (totalDistance < 10000) safeArea++;
+	}
+	
+	return safeArea;
+}
+
+public class Map
+{
+	public Coordinate upperBound = new Coordinate(-1, -1);
+	public List<Coordinate> inputs = new List<Coordinate>();
+	public List<Coordinate> MapPoints = new List<Coordinate>();
+	
 	public Map(List<string> rawCoordinates)
 	{
+		// set up Inputs
 		foreach (var raw in rawCoordinates)
 		{
 			var split = raw.Split(',');
 			var x = int.Parse(split[0]);
 			var y = int.Parse(split[1]);
-			var area = new Area(x, y);
-			areas.Add(area);
+			var coordinate = new Coordinate(x, y);
+			inputs.Add(coordinate);
 			
 			if (x > upperBound.X)
 			{
@@ -58,28 +98,49 @@ class Map
 				upperBound.Y = y;
 			}
 		}
+		
+		// set up MapPoints
+		for (int x = 0; x <= upperBound.X; x++)
+		{
+			for (int y = 0; y <= upperBound.Y; y++)
+			{
+				var xy = new Coordinate(x, y);
+				if (x == 0 || y == 0 || x == upperBound.X || y == upperBound.Y)
+				{
+					xy.OnEdge = true;
+				}
+				
+				int distance = ManhattanDistance(new Coordinate(0, 0), upperBound);
+				for (int i = 0; i < inputs.Count; i++)
+				{
+					var tempDistance = ManhattanDistance(inputs[i], xy);
+					if (tempDistance < distance)
+					{
+						xy.Owner = i;
+						distance = tempDistance;
+					}
+					else if (tempDistance == distance)
+					{
+						xy.Owner = -1;
+					}
+				}
+				
+				MapPoints.Add(xy);
+			}
+		}
 	}
-}
 
-class Area
-{
-	public Coordinate center;
-	public List<Coordinate> coordinatesInArea;
-	public bool isInfinite;
-
-	public Area(int x, int y)
+	public int ManhattanDistance(Coordinate c1, Coordinate c2)
 	{
-		center = new Coordinate(x, y);
-		coordinatesInArea = new List<Coordinate>();
-		isInfinite = false;
+		return (Math.Abs(c1.X - c2.X) + Math.Abs(c1.Y - c2.Y));
 	}
 }
 
-class Coordinate
+public class Coordinate
 {
 	public int X;
 	public int Y;
-	
+	public int Owner = -1;
 	public bool OnEdge = false;
 
 	public Coordinate(int x, int y)
