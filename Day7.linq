@@ -16,12 +16,11 @@ string Part1(Steps steps)
 	var tempSteps = new Steps(steps);
 	var charList = new List<char>();
 	
-	var x = tempSteps.RunCurrentSteps();
-	while (x.Count > 0)
+	var x = tempSteps.RunNextStep();
+	while (x != ' ')
 	{
-		charList.AddRange(x);
-		charList.Add(' ');
-		x = tempSteps.RunCurrentSteps();
+		charList.Add(x);
+		x = tempSteps.RunNextStep();
 	}
 	
 	return new string(charList.ToArray());
@@ -92,6 +91,35 @@ public class Steps
 			}
 		}		
 		return charList;
+	}
+	
+	public char RunNextStep()
+	{
+		var charList = new List<char>();
+		foreach (var step in StepList)
+		{
+			if (!step.Finished && step.PrevSteps.Count == 0)
+			{
+				charList.Add(step.StepName);
+			}
+		}
+
+		charList.Sort();
+		if (charList.Count != 0)
+		{
+			var step = FindStep(charList[0]);
+			step.Finished = true;
+			
+			foreach (var s in StepList)
+			{
+				s.PrevSteps.Remove(step.StepName);
+			}
+			return step.StepName;
+		}
+		else
+		{
+			return ' ';
+		}
 	}
 }
 
