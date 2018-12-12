@@ -4,11 +4,11 @@ void Main()
 {
 	var folder = Path.GetDirectoryName(Util.CurrentQueryPath);
 	var inputs = File.ReadLines(Path.Combine(folder, "Day7_Input.txt")).ToList();
-	var steps = new Steps(inputs);
-
-steps.Dump();
-	Part1(steps).Dump("Part 1 Answer");
-	//Part2(steps).Dump("Part 2 Answer");
+	
+	var steps1 = new Steps(inputs);
+	Part1(steps1).Dump("Part 1 Answer");
+	var steps2 = new Steps(inputs);
+	Part2(steps2).Dump("Part 2 Answer");
 }
 
 string Part1(Steps steps)
@@ -26,9 +26,22 @@ string Part1(Steps steps)
 	return new string(charList.ToArray());
 }
 
-object Part2(Steps steps)
+int Part2(Steps steps)
 {
-	throw new NotImplementedException();
+	var tempSteps = new Steps(steps);
+	var elapsedTime = 0;
+	var workers = new Workers(5, steps);
+	while (true)
+	{
+		if (workers.AllDone()) break;
+		
+		workers.AssignWork();
+		workers.Work();
+		
+		elapsedTime++;
+	}
+	
+	return elapsedTime;
 }
 
 public class Steps
@@ -42,7 +55,6 @@ public class Steps
 			var stepA = FindStep(rawStep[5]);
 			var stepB = FindStep(rawStep[36]);
 
-			stepA.NextSteps.Add(stepB.StepName);
 			stepB.PrevSteps.Add(stepA.StepName);
 		}
 	}
@@ -66,48 +78,13 @@ public class Steps
 		StepList.Add(newStep);
 		return newStep;
 	}
-
-	public List<char> RunCurrentSteps()
-	{
-		var charList = new List<char>();
-		foreach (var step in StepList)
-		{
-			if (!step.Finished && step.PrevSteps.Count == 0)
-			{
-				charList.Add(step.StepName);
-				step.Finished = true;
-			}
-		}
-
-		charList.Sort();
-		if (charList.Count != 0)
-		{
-			foreach (var step in StepList)
-			{
-				foreach (var c in charList)
-				{
-					step.PrevSteps.Remove(c);
-				}
-			}
-		}		
-		return charList;
-	}
 	
 	public char RunNextStep()
 	{
-		var charList = new List<char>();
-		foreach (var step in StepList)
+		var availableStepList = GetAvailableSteps();
+		if (availableStepList.Count != 0)
 		{
-			if (!step.Finished && step.PrevSteps.Count == 0)
-			{
-				charList.Add(step.StepName);
-			}
-		}
-
-		charList.Sort();
-		if (charList.Count != 0)
-		{
-			var step = FindStep(charList[0]);
+			var step = availableStepList[0];
 			step.Finished = true;
 			
 			foreach (var s in StepList)
@@ -121,17 +98,119 @@ public class Steps
 			return ' ';
 		}
 	}
+	
+	public List<Step> GetAvailableSteps()
+	{
+		//var charList = new List<char>();
+		var availableSteps = new List<Step>();
+		foreach (var step in StepList)
+		{
+			if (!step.Finished && step.PrevSteps.Count == 0)
+			{
+				//charList.Add(step.StepName);
+				availableSteps.Add(step);
+			}
+		}
+
+		//charList.Sort();
+		return availableSteps.OrderBy(x => x.StepName).ToList();
+		//return charList;
+	}
 }
 
 public class Step
 {
 	public char StepName;
 	public List<char> PrevSteps = new List<char>();
-	public List<char> NextSteps = new List<char>();
+	public bool Working = false;
 	public bool Finished = false;
+	public int WorkTime;
 	
 	public Step(char stepName)
 	{
 		StepName = stepName;
+		SetInitialWorktime();
+	}
+
+	private void SetInitialWorktime()
+	{
+		WorkTime = (StepName - 'A') + 61;
+	}
+}
+
+public class Workers
+{
+	public List<Worker> WorkerList = new List<Worker>();
+	public Steps Steps;
+	
+	public Workers (int numWorkers, Steps steps)
+	{
+		for (int i = 0; i < numWorkers; i++)
+		{
+			WorkerList.Add(new Worker());
+		}
+		
+		Steps = steps;
+	}
+	
+	public bool AllDone()
+	{
+		var availableSteps = Steps.GetAvailableSteps();
+		if (availableSteps.Count == 0) return true;
+		return false;
+	}
+	
+	public void Work()
+	{
+		foreach (var worker in WorkerList)
+		{
+			if (worker.Work())
+			{
+				foreach (var s in Steps.StepList)
+				{
+					s.PrevSteps.Remove(worker.CurrentStep.StepName);
+				}
+				worker.CurrentStep = null;
+			}
+		}		
+	}
+	
+	public void AssignWork()
+	{
+		var availableWork = Steps.GetAvailableSteps();
+		foreach (var work in availableWork)
+		{
+			if (work.Working) continue;
+			
+			foreach (var worker in WorkerList)
+			{
+				if (worker.CurrentStep == null)
+				{
+					worker.CurrentStep = work;
+					worker.CurrentStep.Working = true;
+					break;
+				}
+			}
+		}
+	}
+}
+
+public class Worker
+{
+	public Step CurrentStep;
+	
+	public bool Work()
+	{
+		if (CurrentStep != null)
+		{
+			CurrentStep.WorkTime--;
+
+			if (CurrentStep.WorkTime == 0)
+			{
+				CurrentStep.Finished = true;
+				return true;
+			}
+		}
+		return false;
 	}
 }
