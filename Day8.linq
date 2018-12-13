@@ -9,7 +9,27 @@ void Main()
 
 public static class NodeFactory
 {
-	
+	public static Node CreateNodeTree(string rawData)
+	{
+		var rootNode = new Node();
+		var dataSplit = rawData.Split(' ');
+		Queue<int> dataQueue = new Queue<int>();
+		foreach (var data in dataSplit)
+		{
+			dataQueue.Enqueue(int.Parse(data));
+		}
+		
+		rootNode.Header.NumChildNodes = dataQueue.Dequeue();
+		rootNode.Header.NumMetaData = dataQueue.Dequeue();
+		
+		for (int i = 0; i < rootNode.Header.NumChildNodes; i++)
+		{
+			
+		}
+		
+		
+		return rootNode;
+	}
 }
 
 public class Node
